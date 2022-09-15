@@ -103,13 +103,15 @@ const KittyAvatar = props => {
   if (!dna) return null
 
   const cat = dnaToAttributes(dna)
-  return <div style={outerStyle}>
-    <img alt='body' src={cat.body} style={innerStyle} />
-    <img alt='fur' src={cat.fur} style={innerStyle} />
-    <img alt='mouth' src={cat.mouth} style={innerStyle} />
-    <img alt='eyes' src={cat.eyes} style={innerStyle} />
-    <img alt='accessory' src={cat.accessory} style={innerStyle} />
-  </div>
-}
+  return (
+    <div style={outerStyle}>
+      <img alt='body' src={cat.body} style={innerStyle} />
+      <img alt='fur' src={cat.fur} style={innerStyle} />
+      <img alt='mouth' src={cat.mouth} style={innerStyle} />
+      <img alt='eyes' src={cat.eyes} style={innerStyle} />
+      <img alt='accessory' src={cat.accessory} style={innerStyle} />
+    </div>
+    )
+  }
 
 export default KittyAvatar

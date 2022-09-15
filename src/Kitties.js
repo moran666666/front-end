@@ -1,30 +1,81 @@
-import React, { useState } from 'react'
-import { Form, Grid } from 'semantic-ui-react'
+import React, { useEffect, useState } from "react";
+import { Form, Grid } from "semantic-ui-react";
 
-import { TxButton } from './substrate-lib/components'
+import { useSubstrateState } from "./substrate-lib";
+import { TxButton } from "./substrate-lib/components";
 
-export default function Main (props) {
+import KittyCards from "./KittyCards";
 
-  const [kittyCnt] = useState(0)
+export default function Kitties(props) {
+  const { api, keyring } = useSubstrateState();
+  const [status, setStatus] = useState("");
+  const [kitties, setKitties] = useState([]);
+  const [kittyDNAs, setKittyDNAs] = useState([]);
+  const [kittyOwners, setKittyOwners] = useState([]);
 
-  const [status] = useState('')
+  const fetchKitties = () => {
+    let unsubscribe;
+    api.query.kittiesModule
+      .nextKittyId((cnt) => {
+        if (cnt !== "") {
+          const kittyIds = Array.from(Array(parseInt(cnt, 10)), (v, k) => k);
 
-  return <Grid.Column width={16}>
-    <h1>小毛孩</h1>
-    <Form style={{ margin: '1em 0' }}>
-      <Form.Field style={{ textAlign: 'center' }}>
-        <TxButton
-          label={kittyCnt} type='SIGNED-TX'
-          attrs={{
-            palletRpc: 'kitties',
-            callable: 'create',
-            inputParams: [],
-            paramFields: []
-          }}
-        />
-      </Form.Field>
-    </Form>
-    <div style={{ overflowWrap: 'break-word' }}>{status}</div>
-  </Grid.Column>
+          api.query.kittiesModule.kittyOwner
+            .multi(kittyIds, (kittyOwners) => {
+              setKittyOwners(kittyOwners);
+            })
+            .catch(console.error);
 
+          api.query.kittiesModule.kitties
+            .multi(kittyIds, (kittyDna) => {
+              setKittyDNAs(kittyDna);
+            })
+            .catch(console.error);
+        }
+      })
+      .then((unsub) => {
+        unsubscribe = unsub;
+      })
+      .catch(console.error);
+
+    return () => unsubscribe && unsubscribe();
+  };
+
+  const wrapKitties = () => {
+    const kitties = [];
+    for (let i = 0; i < kittyDNAs.length; ++i) {
+      const kitty = {};
+      kitty.id = i;
+      kitty.dna = kittyDNAs[i].unwrap();
+      kitty.owner = keyring.encodeAddress(kittyOwners[i].unwrap());
+      kitties[i] = kitty;
+    }
+    setKitties(kitties);
+  };
+
+  useEffect(fetchKitties, [api, keyring]);
+  useEffect(wrapKitties, [keyring, kittyDNAs, kittyOwners]);
+
+  return (
+    <Grid.Column width={16}>
+      <h1>小毛孩</h1>
+      <KittyCards kitties={kitties} setStatus={setStatus} />
+      <Form style={{ margin: "1em 0" }}>
+        <Form.Field style={{ textAlign: "center" }}>
+          <TxButton
+            label="创建小毛孩"
+            type="SIGNED-TX"
+            setStatus={setStatus}
+            attrs={{
+              palletRpc: "kittiesModule",
+              callable: "create",
+              inputParams: [],
+              paramFields: [],
+            }}
+          />
+        </Form.Field>
+      </Form>
+      <div style={{ overflowWrap: "break-word" }}>{status}</div>
+    </Grid.Column>
+  );
 }

@@ -86,7 +86,7 @@ function Main() {
             <TemplateModule />
           </Grid.Row>
           <Grid.Row>
-            <Kitties />
+          <Kitties />
           </Grid.Row>
         </Grid>
       </Container>
